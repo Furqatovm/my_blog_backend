@@ -16,9 +16,9 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'bl
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # 🔐 Xavfsizlik muhiti (Environment)
-app.config['JWT_SECRET_KEY'] = 'sizning_juda_maxfiy_kalitingiz_12345' 
+# Render'dagi JWT_SECRET_KEY ni o'qiydi, topilmasa 'dev-key' ni ishlatadi
+app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'dev-key-12345')
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(days=1)
-
 # Rasmlar uchun joy
 UPLOAD_FOLDER = os.path.join(basedir, 'static/uploads')
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
