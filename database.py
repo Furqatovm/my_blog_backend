@@ -155,23 +155,40 @@ def create_post():
     if identity['role'] != 'admin':
         return jsonify({"error": "Faqat admin post qo'sha oladi"}), 403
 
+    # Ma'lumotlarni olish
     title = request.form.get('title')
     content = request.form.get('content')
     category = request.form.get('category')
-    
+
+    # MUHIM: 422 xatosini oldini olish uchun tekshiruv
+    if not title or not content or not category:
+        return jsonify({"error": "Sarlavha, matn yoki kategoriya yetishmayapti"}), 422
+
     image_url = None
-    if 'post_image' in request.files:
-        file = request.files['post_image']
-        if file.filename != '':
-            filename = secure_filename(f"{datetime.now().timestamp()}_{file.filename}")
-            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-            image_url = f"{request.host_url}uploads/{filename}"
+    try:
+        if 'post_image' in request.files:
+            file = request.files['post_image']
+            if file and file.filename != '':
+                filename = secure_filename(f"{datetime.now().timestamp()}_{file.filename}")
+                file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                image_url = f"{request.host_url}uploads/{filename}"
 
-    new_post = Post(title=title, content=content, category=category, post_image=image_url, author=identity['id'])
-    db.session.add(new_post)
-    db.session.commit()
-    return jsonify(new_post.to_dict()), 201
-
+        # Author ID ni string sifatida saqlaymiz
+        new_post = Post(
+            title=str(title), 
+            content=str(content), 
+            category=str(category), 
+            post_image=image_url, 
+            author=str(identity['id'])
+        )
+        db.session.add(new_post)
+        db.session.commit()
+        return jsonify(new_post.to_dict()), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": f"Serverda xatolik: {str(e)}"}), 500
+    
+    
 @app.route('/api/posts/<int:id>', methods=['DELETE'])
 @jwt_required()
 def delete_post(id):
